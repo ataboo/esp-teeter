@@ -1,0 +1,55 @@
+menu "MPU6050 Gyro/Accelerometer"
+    config GYRO_SCL
+        int "I2C SCL GPIO Pin"
+        range 1 39
+        default 22
+    
+    config GYRO_SDA
+        int "I2C SDA GPIO Pin"
+        range 1 39
+        default 21
+
+    config GYRO_I2C_ADDRESS
+        hex "I2C Address"
+        range 0x68 0x69
+        default 0x68
+
+    choice GYRO_RANGE
+        prompt "Gyro Range"
+        default GYRO_RANGE_0
+        help
+            Level of gyro sensitivity.
+
+        config GYRO_RANGE_0
+            bool "Low (250 dps)"
+        config GYRO_RANGE_1
+            bool "Med (500 dps)"
+        config GYRO_RANGE_2
+            bool "High (1000 dps)"
+        config GYRO_RANGE_3
+            bool "X-High (2000 dps)"
+    endchoice
+
+    
+    choice ACCEL_RANGE
+        prompt "Accelerometer Range"
+        default ACCEL_RANGE_0
+        help
+            Range of accelerometer in g's.
+
+        config ACCEL_RANGE_0
+            bool "Low (2g)"
+        config ACCEL_RANGE_1
+            bool "Med (4g)"
+        config ACCEL_RANGE_2
+            bool "High (8g)"
+        config ACCEL_RANGE_3
+            bool "X-High (16g)"
+    endchoice
+
+    config DLPF_CFG_LEVEL
+        int "Digital Low Pass Filter Level"
+        range 0 7
+        default 0
+
+endmenu
