@@ -1,19 +1,4 @@
 menu "MPU6050 Gyro/Accelerometer"
-    config GYRO_SCL
-        int "I2C SCL GPIO Pin"
-        range 1 39
-        default 22
-    
-    config GYRO_SDA
-        int "I2C SDA GPIO Pin"
-        range 1 39
-        default 21
-
-    config GYRO_I2C_ADDRESS
-        hex "I2C Address"
-        range 0x68 0x69
-        default 0x68
-
     choice GYRO_RANGE
         prompt "Gyro Range"
         default GYRO_RANGE_0
@@ -29,7 +14,6 @@ menu "MPU6050 Gyro/Accelerometer"
         config GYRO_RANGE_3
             bool "X-High (2000 dps)"
     endchoice
-
     
     choice ACCEL_RANGE
         prompt "Accelerometer Range"
@@ -46,6 +30,43 @@ menu "MPU6050 Gyro/Accelerometer"
         config ACCEL_RANGE_3
             bool "X-High (16g)"
     endchoice
+
+    choice GYRO_I2C_DEVICE_NUM
+        prompt "I2C Device Number"
+        default I2C_DEVICE_NUM_0
+        help
+            ESP-32 I2C device to use.
+
+        config I2C_DEVICE_NUM_0
+            bool "I2C Number 0"
+        config I2C_DEVICE_NUM_1
+            bool "I2C Number 1"
+    endchoice
+    
+    config MPU6050_SCL_PIN_NUM
+        int "I2C SCL GPIO Pin"
+        range 1 39
+        default 22
+    
+    config MPU6050_SDA_PIN_NUM
+        int "I2C SDA GPIO Pin"
+        range 1 39
+        default 21
+
+    config MPU6050_INTERRUPT
+        bool "Time MPU6050 reads with device interrupt pin"
+        default true
+
+    config MPU6050_INT_PIN_NUM
+        depends on MPU6050_INTERRUPT
+        int "I2C Interrupt GPIO Pin"
+        range 1 39
+        default 35
+
+    config GYRO_I2C_ADDRESS
+        hex "I2C Address"
+        range 0x68 0x69
+        default 0x68
 
     config DLPF_CFG_LEVEL
         int "Digital Low Pass Filter Level"
