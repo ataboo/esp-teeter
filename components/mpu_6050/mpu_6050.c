@@ -137,7 +137,7 @@ esp_err_t mpu_6050_init() {
         return ret;
     }
 
-    vTaskDelay(30/portTICK_PERIOD_MS);
+    vTaskDelay(50/portTICK_PERIOD_MS);
 
     ret = set_gyro_config_values();
     if (ret != ESP_OK) {
@@ -145,7 +145,7 @@ esp_err_t mpu_6050_init() {
         return ret;
     }
 
-    vTaskDelay(30/portTICK_PERIOD_MS);
+    vTaskDelay(50/portTICK_PERIOD_MS);
 
     read_lock = xSemaphoreCreateMutex();
 
@@ -156,7 +156,7 @@ esp_err_t mpu_6050_init() {
     gpio_config_t int_pin_cfg = {
         .pin_bit_mask = (1ULL<<CONFIG_MPU6050_INT_PIN_NUM),
         .mode = GPIO_MODE_INPUT,
-        .pull_down_en = true,
+        .pull_down_en = false,
         .pull_up_en = false,
         .intr_type = GPIO_INTR_POSEDGE
     };

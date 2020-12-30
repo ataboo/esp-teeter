@@ -1,6 +1,8 @@
 #include "orientation_service.h"
 #include "mpu_6050.h"
 #include "teeter_common.h"
+
+#define ESP_LOCAL_LOG_LEVEL ESP_LOG_INFO
 #include "esp_log.h"
 #include <string.h>
 #include <math.h>
@@ -13,27 +15,32 @@ static int64_t _last_update = 0;
 static int64_t _current_time;
 static int64_t _delta;
 static float _gx_rads, _gy_rads, _gz_rads;
+static gyro_correction_t _correction;
 
 static float map(float value, float r1_min, float r1_max, float r2_min, float r2_max) {
     return value / (r1_max - r1_min) * (r2_max - r2_min) + r2_min;
 }
 
-static gyro_correction_t measure_gyro_correction() {
+static esp_err_t measure_gyro_correction(gyro_correction_t* correction) {
     mpu_6050_values_t values;
-    gyro_correction_t correction = { };
+
+    ESP_LOGI(TAG, "Callibrating...");
 
     for(int i=0; i<1000; i++) {
         mpu_6050_read(&values);    
-        correction.gx = (correction.gx * i + values.gx) / (i+1);
-        correction.gy = (correction.gy * i + values.gy) / (i+1);
-        correction.gz = (correction.gz * i + values.gz) / (i+1);
+        correction->gx = (correction->gx * i + values.gx) / (i+1);
+        correction->gy = (correction->gy * i + values.gy) / (i+1);
+        correction->gz = (correction->gz * i + values.gz) / (i+1);
 
-        correction.ax = (correction.ax * i + values.ax) / (i+1);
-        correction.ay = (correction.ay * i + values.ay) / (i+1);
-        correction.az = (correction.az * i + (values.ax-1)) / (i+1);
+        correction->ax = (correction->ax * i + values.ax) / (i+1);
+        correction->ay = (correction->ay * i + values.ay) / (i+1);
+        correction->az = (correction->az * i + (values.az-1)) / (i+1);
     }
 
-    return correction;
+    ESP_LOGI(TAG, "Gyro correction:  gx: %.5f, gy: %.5f, gz: %.5f", correction->gx, correction->gy, correction->gz);
+    ESP_LOGI(TAG, "Accel correction: ax: %.5f, ay: %.5f, az: %.5f", correction->ax, correction->ay, correction->az);
+
+    return ESP_OK;
 }
 
 static void update_orientation(mpu_6050_values_t* gyro_values) {
@@ -59,8 +66,6 @@ static void read_task(void* arg) {
     mpu_6050_values_t values;
     esp_err_t ret;
 
-    gyro_correction_t correction = measure_gyro_correction();
-
     while(_running) {
         ret = mpu_6050_read(&values);
         if (ret != ESP_OK) {
@@ -68,12 +73,12 @@ static void read_task(void* arg) {
             continue;
         }
 
-        values.ax -= correction.ax;
-        values.ay -= correction.ay;
-        values.az -= correction.az;
-        values.gx -= correction.gz;
-        values.gy -= correction.gy;
-        values.gz -= correction.gz;
+        values.ax -= _correction.ax;
+        values.ay -= _correction.ay;
+        values.az -= _correction.az;
+        values.gx -= _correction.gz;
+        values.gy -= _correction.gy;
+        values.gz -= _correction.gz;
 
         xSemaphoreTake(read_lock, portMAX_DELAY);
         update_orientation(&values);
@@ -85,19 +90,25 @@ static void read_task(void* arg) {
     vTaskDelete(NULL);
 }
 
-
-esp_err_t init_orientation_service() {
-    _orientation = (orientation_t){
-        x_rads: 0,
-        y_rads: 0,
-        z_rads: 0
-    };
+esp_err_t init_orientation_service(gyro_correction_t* correction, bool measure_correction) {
+    _orientation = (orientation_t){ };
     read_lock = xSemaphoreCreateMutex();
     _running = true;
     
     esp_err_t ret = mpu_6050_init();
     if(ret != ESP_OK) {
+        ESP_LOGE(TAG, "failed to init mpu6050");
         return ret;
+    }
+    
+    _correction = (gyro_correction_t){ };
+    
+    if (correction != NULL) {
+        if (measure_correction) {
+            measure_gyro_correction(correction);
+        }
+
+        memcpy(&_correction, correction, sizeof(gyro_correction_t));
     }
 
     xTaskCreatePinnedToCore(read_task, "main read task", 4096, NULL, 1, NULL, 1);

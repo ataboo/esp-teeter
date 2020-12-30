@@ -9,8 +9,11 @@ static const char* TAG = "ESP TEETER";
 
 void app_main(void)
 {
-    init_orientation_service();
     orientation_t orientation;
+    gyro_correction_t correction;
+
+    ESP_ERROR_CHECK(init_orientation_service(&correction, true));
+    ESP_LOGI(TAG, "orientation initialized");
 
     while(true) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);

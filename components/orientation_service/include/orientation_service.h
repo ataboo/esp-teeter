@@ -32,7 +32,7 @@ typedef struct {
     float z_rads;
 } orientation_t;
 
-esp_err_t init_orientation_service();
+esp_err_t init_orientation_service(gyro_correction_t* correction, bool measure_correction);
 
 esp_err_t get_orientation(orientation_t* orientation);
 

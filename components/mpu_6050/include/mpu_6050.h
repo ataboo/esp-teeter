@@ -30,8 +30,8 @@
 #define MPU6050_RA_INT_CFG              0x37
 #define MPU6050_RA_INT_EN               0x38
 
-// 0b11000000
-#define MPU6050_INT_CFG_BYTE            0x40
+// 0b00000000
+#define MPU6050_INT_CFG_BYTE            0x0
 // 0b00000001
 #define MPU6050_INT_EN_BYTE             0x01
 
